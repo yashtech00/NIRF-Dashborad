@@ -4,12 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon src/index.js",
+    "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "worker": "nodemon src/workers/image_processor.worker.js",
     "batch:scrape": "node scripts/batch_scrape_all.js",
-    "batch:dry-run": "node scripts/batch_scrape_all.js --dry-run"
+    "batch:dry-run": "node scripts/batch_scrape_all.js --dry-run",
+    "build": "prisma generate --schema=src/models/prisma/schema.prisma",
+    "postinstall": "prisma generate --schema=src/models/prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
