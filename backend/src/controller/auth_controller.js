@@ -142,7 +142,7 @@ export const login = async (req, res) => {
 /* ================= REFRESH ================= */
 export const refresh = async (req, res) => {
     try {
-        const token = req.cookies.refreshToken;
+        const token = req?.cookies?.refreshToken;
 
         if (!token) {
             return res.status(401).json({ message: "Unauthorized" });
@@ -205,7 +205,7 @@ export const refresh = async (req, res) => {
 /* ================= LOGOUT ================= */
 export const logout = async (req, res) => {
     try {
-        const token = req.cookies.refreshToken;
+        const token = req?.cookies?.refreshToken;
 
         if (token) {
             const tokens = await prisma.refreshToken.findMany();
