@@ -2,7 +2,7 @@ import { axiosInstance } from "./axiosInstances";
 
 export const register = async (name: string, email: string, password: string) => {
     try{
-        const res = await axiosInstance.post("api/auth/register", { name, email, password });
+        const res = await axiosInstance.post("/api/auth/register", { name, email, password });
         const token = res.headers.authorization || res.data.accessToken;
         if (token) {
             localStorage.setItem("token", token.replace("Bearer ", ""));
@@ -15,7 +15,7 @@ export const register = async (name: string, email: string, password: string) =>
 
 export const login = async (email: string, password: string) => {
     try{
-        const res = await axiosInstance.post("api/auth/login", { email, password });
+        const res = await axiosInstance.post("/api/auth/login", { email, password });
         const token = res.headers.authorization || res.data.accessToken;
         if (token) {
             localStorage.setItem("token", token.replace("Bearer ", ""));
