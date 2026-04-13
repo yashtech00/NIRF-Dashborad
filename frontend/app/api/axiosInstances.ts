@@ -1,10 +1,15 @@
 import axios from "axios";
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL;
-console.log("baseURL", baseURL);
+// Clean the baseURL to ensure it's not empty and has a protocol
+let baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// Ensure baseURL starts with http/https to prevent relative path issues in Axios
+if (baseURL && !baseURL.startsWith("http")) {
+    baseURL = `https://${baseURL}`;
+}
 
 export const axiosInstance = axios.create({
-    baseURL: baseURL,
+    baseURL: baseURL.replace(/\/$/, ""), // Remove trailing slash if present
     headers: {
         "Content-Type": "application/json",
     },
