@@ -9,10 +9,6 @@ import { downloadImage, deleteImage } from "../service/downloader.js";
 import { extractDataFromImage } from "../service/ai_extractor.js";
 import prisma from "../lib/prisma.js";
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-const BATCH_SIZE       = 2;        // jobs before mandatory cooldown
-const BATCH_DELAY_MS   = 30_000;   // 30 seconds cooldown between batches
-const OVERLOAD_PAUSE_MS = 60_000;  // 60 seconds pause on API overload
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -62,8 +58,6 @@ const normalizeScore = (extracted = {}) => ({
   },
 });
 
-// ── Batch counter (module-level, shared across single worker instance) ────────
-let jobsProcessedInBatch = 0;
 
 // ── Core Job Processor ────────────────────────────────────────────────────────
 
@@ -90,6 +84,9 @@ const processJob = async (job) => {
 
   try {
     // ── Step 2: AI Extraction (Pro → Flash fallback) ────────────────────────
+    console.log(`⏳ [Job ${job.id}] Waiting 20s before AI extraction...`);
+    await sleep(20_000);
+
     let extracted;
     try {
       extracted = await extractDataFromImage(imagePath, promptType);
@@ -150,28 +147,6 @@ const processJob = async (job) => {
   }
 };
 
-// ── Batch-Aware Processor Wrapper ─────────────────────────────────────────────
-
-/**
- * Wraps processJob with batch-size tracking.
- * After every BATCH_SIZE jobs, sleep BATCH_DELAY_MS before accepting the next.
- */
-const batchAwareProcessor = async (job) => {
-  const result = await processJob(job);
-
-  jobsProcessedInBatch += 1;
-
-  if (jobsProcessedInBatch >= BATCH_SIZE) {
-    jobsProcessedInBatch = 0;
-    console.log(
-      `⏸  [Batch] ${BATCH_SIZE} jobs done — cooling down for ${BATCH_DELAY_MS / 1000}s to avoid API overload...`
-    );
-    await sleep(BATCH_DELAY_MS);
-    console.log("▶️  [Batch] Cooldown complete. Resuming...");
-  }
-
-  return result;
-};
 
 // ── Worker Factory ────────────────────────────────────────────────────────────
 
@@ -180,9 +155,9 @@ const batchAwareProcessor = async (job) => {
  * Call this once at server startup.
  */
 export const startWorker = () => {
-  const worker = new Worker(NIRF_QUEUE_NAME, batchAwareProcessor, {
+  const worker = new Worker(NIRF_QUEUE_NAME, processJob, {
     ...defaultWorkerOptions,
-    concurrency: 1, // strict: one job at a time
+    concurrency: 3, // fast processing
   });
 
   // ── Completed ──────────────────────────────────────────────────────────────
@@ -206,13 +181,8 @@ export const startWorker = () => {
 
     if (isOverload) {
       console.warn(
-        `🛑 [Worker] API overload detected — pausing worker for ${OVERLOAD_PAUSE_MS / 1000}s...`
+        `🛑 [Worker] API overload detected — relying on job retries...`
       );
-      await worker.pause();
-      setTimeout(async () => {
-        console.log("▶️  [Worker] Resuming after overload pause...");
-        await worker.resume();
-      }, OVERLOAD_PAUSE_MS);
     }
   });
 
@@ -222,7 +192,7 @@ export const startWorker = () => {
   });
 
   console.log(
-    `🚀 NIRF Image Worker started | concurrency: 1 | batch: ${BATCH_SIZE} jobs / ${BATCH_DELAY_MS / 1000}s cooldown`
+    `🚀 NIRF Image Worker started | concurrency: 100`
   );
 
   return worker;

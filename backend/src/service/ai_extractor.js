@@ -364,9 +364,13 @@ const callGemini = async (modelName, imagePath, promptType = "PROMPT_1") => {
 export const extractDataFromImage = async (imagePath, promptType = "PROMPT_1") => {
   let lastError = null;
 
-  // 🧠 PRO MODEL — 3 attempts, each rotates key on overload
-  for (let i = 0; i < 3; i++) {
+  // 🧠 PRO MODEL — 7 attempts, each rotates key on overload
+  for (let i = 0; i < 7; i++) {
     try {
+      if (i > 0) {
+        console.log(`⏳ Waiting 20s before Pro retry ${i + 1}...`);
+        await sleep(20_000);
+      }
       console.log(`🧠 Pro attempt ${i + 1} [${promptType}]`);
       return await callGemini(GEMINI_PRO_MODEL, imagePath, promptType);
     } catch (err) {
@@ -376,22 +380,7 @@ export const extractDataFromImage = async (imagePath, promptType = "PROMPT_1") =
     }
   }
 
-  console.log("🛑 All Pro attempts exhausted, switching to Flash...");
-  await sleep(5000); // brief pause before switching model tier
-
-  // ⚡ FLASH MODEL — 2 attempts, same key rotation
-  for (let i = 0; i < 2; i++) {
-    try {
-      console.log(`⚡ Flash attempt ${i + 1} [${promptType}]`);
-      return await callGemini(GEMINI_FLASH_MODEL, imagePath, promptType);
-    } catch (err) {
-      lastError = err;
-      if (!isOverloadError(err)) throw err;
-      console.warn(`⚠️  Flash attempt ${i + 1} overloaded, retrying...`);
-    }
-  }
-
   throw new Error(
-    `❌ Both AI models failed after all retries: ${lastError?.message}`
+    `❌ AI model failed after 7 attempts: ${lastError?.message}`
   );
 };

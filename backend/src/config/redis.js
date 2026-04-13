@@ -105,9 +105,9 @@ nirfQueueEvents.on("failed", ({ jobId, failedReason }) => {
  */
 export const defaultWorkerOptions = {
   connection: redisConnection,
-  concurrency: 1,
+  concurrency: 3 ,
   limiter: {
-    max: 2,
+    max: 3,
     duration: 30000,
   },
 };
