@@ -10,8 +10,8 @@ import { extractDataFromImage } from "../service/ai_extractor.js";
 import prisma from "../lib/prisma.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const BATCH_SIZE       = 2;        // jobs before mandatory cooldown
-const BATCH_DELAY_MS   = 30_000;   // 30 seconds cooldown between batches
+const BATCH_SIZE = 2;        // jobs before mandatory cooldown
+const BATCH_DELAY_MS = 30_000;   // 30 seconds cooldown between batches
 const OVERLOAD_PAUSE_MS = 60_000;  // 60 seconds pause on API overload
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -29,35 +29,35 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 /** Normalize AI-extracted score object into a strict numeric structure. */
 const normalizeScore = (extracted = {}) => ({
   tlr: {
-    score:  toNullableNumber(extracted?.tlr?.score),
-    ss:     toNullableNumber(extracted?.tlr?.ss),
-    fsr:    toNullableNumber(extracted?.tlr?.fsr),
-    fqe:    toNullableNumber(extracted?.tlr?.fqe),
-    fru:    toNullableNumber(extracted?.tlr?.fru),
+    score: toNullableNumber(extracted?.tlr?.score),
+    ss: toNullableNumber(extracted?.tlr?.ss),
+    fsr: toNullableNumber(extracted?.tlr?.fsr),
+    fqe: toNullableNumber(extracted?.tlr?.fqe),
+    fru: toNullableNumber(extracted?.tlr?.fru),
     oe_mir: toNullableNumber(extracted?.tlr?.oe_mir),
   },
   rp: {
     score: toNullableNumber(extracted?.rp?.score),
-    pu:    toNullableNumber(extracted?.rp?.pu),
-    qp:    toNullableNumber(extracted?.rp?.qp),
-    ipr:   toNullableNumber(extracted?.rp?.ipr),
-    fppp:  toNullableNumber(extracted?.rp?.fppp),
-    sdg:   toNullableNumber(extracted?.rp?.sdg),
+    pu: toNullableNumber(extracted?.rp?.pu),
+    qp: toNullableNumber(extracted?.rp?.qp),
+    ipr: toNullableNumber(extracted?.rp?.ipr),
+    fppp: toNullableNumber(extracted?.rp?.fppp),
+    sdg: toNullableNumber(extracted?.rp?.sdg),
   },
   go: {
     score: toNullableNumber(extracted?.go?.score),
-    gue:   toNullableNumber(extracted?.go?.gue),
-    gphd:  toNullableNumber(extracted?.go?.gphd),
+    gue: toNullableNumber(extracted?.go?.gue),
+    gphd: toNullableNumber(extracted?.go?.gphd),
   },
   oi: {
     score: toNullableNumber(extracted?.oi?.score),
-    rd:    toNullableNumber(extracted?.oi?.rd),
-    wd:    toNullableNumber(extracted?.oi?.wd),
-    escs:  toNullableNumber(extracted?.oi?.escs),
-    pcs:   toNullableNumber(extracted?.oi?.pcs),
+    rd: toNullableNumber(extracted?.oi?.rd),
+    wd: toNullableNumber(extracted?.oi?.wd),
+    escs: toNullableNumber(extracted?.oi?.escs),
+    pcs: toNullableNumber(extracted?.oi?.pcs),
   },
   pr: {
-    score:   toNullableNumber(extracted?.pr?.score),
+    score: toNullableNumber(extracted?.pr?.score),
     pr_accr: toNullableNumber(extracted?.pr?.pr_accr),
   },
 });
@@ -115,14 +115,14 @@ const processJob = async (job) => {
       console.warn(`⚠️  [Job ${job.id}] NirfCollegeData not found for ${id}. Creating placeholder.`);
       nirfDataDoc = await prisma.nirfCollegeData.create({
         data: {
-          institutionId:   id,
+          institutionId: id,
           institutionName: extracted.institutionName || id,
-          ranking_type:    rankingType,
-          year:            Number(year),
-          city:            extracted.city  || "Unknown",
-          state:           extracted.state || "Unknown",
-          score:           toNullableNumber(extracted.totalScore),
-          over_all_rank:   extracted.over_all_rank || "N/A",
+          ranking_type: rankingType,
+          year: Number(year),
+          city: extracted.city || "Unknown",
+          state: extracted.state || "Unknown",
+          score: toNullableNumber(extracted.totalScore),
+          over_all_rank: extracted.over_all_rank || "N/A",
         },
       });
     }
@@ -132,12 +132,12 @@ const processJob = async (job) => {
 
     // ── Step 6: Save / update NirfInputData ────────────────────────────────
     await prisma.nirfInputData.upsert({
-      where:  { nirfCollegeDataId: nirfDataDoc.id },
+      where: { nirfCollegeDataId: nirfDataDoc.id },
       update: { score: normalizedScore },
       create: {
-        institutionId:     id,
+        institutionId: id,
         nirfCollegeDataId: nirfDataDoc.id,
-        score:             normalizedScore,
+        score: normalizedScore,
       },
     });
 
@@ -182,7 +182,7 @@ const batchAwareProcessor = async (job) => {
 export const startWorker = () => {
   const worker = new Worker(NIRF_QUEUE_NAME, batchAwareProcessor, {
     ...defaultWorkerOptions,
-    concurrency: 1, // strict: one job at a time
+    concurrency: 2, // strict: one job at a time
   });
 
   // ── Completed ──────────────────────────────────────────────────────────────

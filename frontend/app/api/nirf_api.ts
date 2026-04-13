@@ -23,7 +23,7 @@ export const nirfExportExcel = async (year?: string, rankingType?: string) => {
     try{
         const params: any = {};
         if (year) params.year = year;
-        if (rankingType) params.rankingType = rankingType;
+        if (rankingType) params.ranking_type = rankingType;
 
         const res = await axiosInstance.get("/api/nirf/export-excel", {
             params,

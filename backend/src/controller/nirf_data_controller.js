@@ -104,12 +104,13 @@ export const clearQueue = async (req, res) => {
  */
 export const exportExcel = async (req, res) => {
   try {
-    const { year, ranking_type } = req.query;
+    const { year, ranking_type, rankingType } = req.query;
+    const finalRankingType = ranking_type || rankingType;
 
     // Build optional filter
     const filter = {};
     if (year) filter.year = Number(year);
-    if (ranking_type) filter.rankingType = ranking_type;
+    if (finalRankingType) filter.rankingType = finalRankingType;
 
     const buffer = await generateExcelBuffer(filter);
 
@@ -137,8 +138,12 @@ export const exportExcel = async (req, res) => {
 export const getAvailableDatasets = async (req, res) => {
   try {
     // Group NirfCollegeData by year + ranking_type, count institutions per group
+    // ONLY show datasets that have at least one successfully processed score
     const groups = await prisma.nirfCollegeData.groupBy({
       by: ["year", "ranking_type"],
+      where: {
+        nirfInputData: { some: {} }
+      },
       _count: { id: true },
       orderBy: [
         { year: "desc" },
@@ -147,8 +152,8 @@ export const getAvailableDatasets = async (req, res) => {
     });
 
     const datasets = groups.map((g) => ({
-      year:             g.year,
-      ranking_type:     g.ranking_type,
+      year: g.year,
+      ranking_type: g.ranking_type,
       institutionCount: g._count.id,
     }));
 
