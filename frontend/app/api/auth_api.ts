@@ -28,7 +28,7 @@ export const login = async (email: string, password: string) => {
 
 export const logout = async () => {
     try{
-        const res = await axiosInstance.post("api/auth/logout");
+        const res = await axiosInstance.post("/api/auth/logout");
         localStorage.removeItem("token");
         return res.data;
     }catch(e){
@@ -38,7 +38,7 @@ export const logout = async () => {
 
 export const refreshAccessToken = async () => {
     try{
-        const res = await axiosInstance.post("api/auth/refresh");
+        const res = await axiosInstance.post("/api/auth/refresh");
         return res.data;
     }catch(e){
         console.log(e);

@@ -3,7 +3,7 @@ import { axiosInstance } from "./axiosInstances";
 
 export const nirfScrape = async (year: string, rankingType: string) => {
     try{
-        const res = await axiosInstance.post("api/nirf/scrape", { year, ranking_type: rankingType });
+        const res = await axiosInstance.post("/api/nirf/scrape", { year, ranking_type: rankingType });
         return res.data;
     }catch(e){
         console.log(e);
@@ -12,7 +12,7 @@ export const nirfScrape = async (year: string, rankingType: string) => {
 
 export const nirfQueueStatus = async () => {
     try{
-        const res = await axiosInstance.get("api/nirf/queue-status");
+        const res = await axiosInstance.get("/api/nirf/queue-status");
         return res.data;
     }catch(e){
         console.log(e);
@@ -25,7 +25,7 @@ export const nirfExportExcel = async (year?: string, rankingType?: string) => {
         if (year) params.year = year;
         if (rankingType) params.rankingType = rankingType;
 
-        const res = await axiosInstance.get("api/nirf/export-excel", {
+        const res = await axiosInstance.get("/api/nirf/export-excel", {
             params,
             responseType: "blob"
         });
@@ -38,7 +38,7 @@ export const nirfExportExcel = async (year?: string, rankingType?: string) => {
 
 export const nirfGetAvailableDatasets = async () => {
     try {
-        const res = await axiosInstance.get("api/nirf/available-datasets");
+        const res = await axiosInstance.get("/api/nirf/available-datasets");
         return res.data;
     } catch(e) {
         console.log(e);
@@ -48,7 +48,7 @@ export const nirfGetAvailableDatasets = async () => {
 
 export const nirfClearQueue = async () => {
     try {
-        const res = await axiosInstance.post("api/nirf/clear-queue");
+        const res = await axiosInstance.post("/api/nirf/clear-queue");
         return res.data;
     } catch(e) {
         console.log(e);
@@ -58,7 +58,7 @@ export const nirfClearQueue = async () => {
 
 export const nirfDeleteDataset = async (year: string, ranking_type: string) => {
     try {
-        const res = await axiosInstance.delete("api/nirf/dataset", {
+        const res = await axiosInstance.delete("/api/nirf/dataset", {
             params: { year, ranking_type }
         });
         return res.data;
