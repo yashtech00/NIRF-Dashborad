@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model User {
+  id       String @id @default(cuid())
+  name     String
+  email    String @unique
+  password String
+
+  refreshTokens RefreshToken[]
+  
+  nirfCollegeData  NirfCollegeData[]
+  nirfInputData    NirfInputData[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+} 
+
+model NirfCollegeData {
+  id String @id @default(cuid())
+  institutionId String?
+  institutionName String?
+  ranking_type String
+  year Int
+  city String?
+  state String?
+  score Float?
+  over_all_rank String?
+
+  userId String?
+  user User? @relation(fields: [userId], references: [id])
+
+  nirfInputData NirfInputData[]
+  
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([institutionId, year, ranking_type])
+}
+
+model NirfInputData {
+  id String @id @default(cuid())
+  institutionId String
+
+  score Json
+
+  userId String?
+  user User? @relation(fields: [userId], references: [id])
+
+  nirfCollegeDataId String
+  nirfCollegeData NirfCollegeData @relation(fields: [nirfCollegeDataId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([nirfCollegeDataId])
+}
