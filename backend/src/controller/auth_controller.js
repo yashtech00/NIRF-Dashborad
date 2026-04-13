@@ -63,8 +63,8 @@ export const register = async (req, res) => {
         return res.status(201)
             .header("Authorization", `Bearer ${accessToken}`)
             .json({
+                success: true,
                 message: "User registered successfully",
-               
                 user: { id: newUser.id, name: newUser.name, email: newUser.email },
             });
 
@@ -129,7 +129,7 @@ export const login = async (req, res) => {
         return res.status(200)
             .header("Authorization", `Bearer ${accessToken}`)
             .json({
-                
+                success: true,
                 user: { id: user.id, name: user.name, email: user.email },
             });
 

@@ -10,6 +10,7 @@ if (baseURL && !baseURL.startsWith("http")) {
 
 export const axiosInstance = axios.create({
     baseURL: baseURL.replace(/\/$/, ""), // Remove trailing slash if present
+    withCredentials: true,
     headers: {
         "Content-Type": "application/json",
     },

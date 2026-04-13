@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ export default function UniqueForm({ mode }: UniqueFormProps) {
     try {
       if (mode === "signup") {
         const response = await register(name, email, password);
-        if (response?.success || response?.accessToken) {
+        if (response?.success) {
           console.log("Registration successful:", response);
           router.push("/pages/dashboard");
         } else {
@@ -44,8 +45,14 @@ export default function UniqueForm({ mode }: UniqueFormProps) {
           setError(response?.message || "Login failed");
         }
       }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || "An error occurred");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message || "An error occurred");
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred");
+      }
     } finally {
       setLoading(false);
     }
