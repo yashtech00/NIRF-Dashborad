@@ -1,7 +1,7 @@
 import { scrapeAndDownloadImages } from "../service/nirf_metadata.js";
 import { generateExcelBuffer } from "../service/excel_exporter.js";
 import { nirfQueue } from "../config/redis.js";
-import { nirf } from "../../../frontend/constant/constant.js";
+import { nirf } from "../constant/constant.js"
 import prisma from "../lib/prisma.js";
 
 /**
