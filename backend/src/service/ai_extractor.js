@@ -106,7 +106,9 @@ Carefully analyze the image and extract ALL visible data.
   },
   "go": {
     "score": number,
+    "gph":number,
     "gue": number,
+    "ms":number
     "gphd": number
   },
   "oi": {
