@@ -77,6 +77,7 @@ const normalizeScore = (extracted = {}) => ({
     fqe:    toNullableNumber(extracted?.tlr?.fqe),
     fru:    toNullableNumber(extracted?.tlr?.fru),
     oe_mir: toNullableNumber(extracted?.tlr?.oe_mir),
+    oe:     toNullableNumber(extracted?.tlr?.oe),
   },
   rp: {
     score: toNullableNumber(extracted?.rp?.score),
@@ -88,8 +89,13 @@ const normalizeScore = (extracted = {}) => ({
   },
   go: {
     score: toNullableNumber(extracted?.go?.score),
+    gph:   toNullableNumber(extracted?.go?.gph),
     gue:   toNullableNumber(extracted?.go?.gue),
+    ms:    toNullableNumber(extracted?.go?.ms),
     gphd:  toNullableNumber(extracted?.go?.gphd),
+    gpg:   toNullableNumber(extracted?.go?.gpg),
+    gss:   toNullableNumber(extracted?.go?.gss),
+    gphe:  toNullableNumber(extracted?.go?.gphe),
   },
   oi: {
     score: toNullableNumber(extracted?.oi?.score),
@@ -97,15 +103,35 @@ const normalizeScore = (extracted = {}) => ({
     wd:    toNullableNumber(extracted?.oi?.wd),
     escs:  toNullableNumber(extracted?.oi?.escs),
     pcs:   toNullableNumber(extracted?.oi?.pcs),
+    sctc:  toNullableNumber(extracted?.oi?.sctc),
   },
   pr: {
     score:   toNullableNumber(extracted?.pr?.score),
     pr_accr: toNullableNumber(extracted?.pr?.pr_accr),
+    premp:   toNullableNumber(extracted?.pr?.premp),
+  },
+  qnr: {
+    score: toNullableNumber(extracted?.qnr?.score),
+    pu:    toNullableNumber(extracted?.qnr?.pu),
+    ci:    toNullableNumber(extracted?.qnr?.ci),
+    fppp:  toNullableNumber(extracted?.qnr?.fppp),
+  },
+  qlr: {
+    score:   toNullableNumber(extracted?.qlr?.score),
+    jcr:     toNullableNumber(extracted?.qlr?.jcr),
+    top25:   toNullableNumber(extracted?.qlr?.top25),
+    ipr:     toNullableNumber(extracted?.qlr?.ipr),
+    h_index: toNullableNumber(extracted?.qlr?.h_index),
+  },
+  sfc: {
+    fqe:  toNullableNumber(extracted?.sfc?.fqe),
+    ss:   toNullableNumber(extracted?.sfc?.ss),
+    gphd: toNullableNumber(extracted?.sfc?.gphd),
   },
 });
 
 // ── Process a single image (download → AI → DB → cleanup) ────────────────────
-const processImage = async ({ inst, year, rankingType, promptType }) => {
+const processImage = async ({ inst, year, rankingType }) => {
   const imageUrl = `https://www.nirfindia.org/nirfpdfcdn/${year}/graph/${rankingType}/${inst.institutionId}.jpg`;
   const destDir  = path.join(process.cwd(), "downloads", "graphs", String(year), rankingType);
   const fileName = `${inst.institutionId}.jpg`;
@@ -115,8 +141,8 @@ const processImage = async ({ inst, year, rankingType, promptType }) => {
   if (!dl.success) throw new Error(`Download failed: ${dl.error}`);
 
   try {
-    // Step 2: AI Extraction
-    const extracted = await extractDataFromImage(dl.path, promptType);
+    // Step 2: AI Extraction (uses unified prompt internally)
+    const extracted = await extractDataFromImage(dl.path);
 
     // Step 3: Find or create NirfCollegeData record
     let nirfDataDoc = await prisma.nirfCollegeData.findUnique({
@@ -163,12 +189,12 @@ const processImage = async ({ inst, year, rankingType, promptType }) => {
 };
 
 // ── Process one image with retry logic ───────────────────────────────────────
-const processWithRetry = async ({ inst, year, rankingType, promptType, imageIndex, total }) => {
+const processWithRetry = async ({ inst, year, rankingType, imageIndex, total }) => {
   const label = `[${imageIndex + 1}/${total}] ${inst.institutionId}`;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      await processImage({ inst, year, rankingType, promptType });
+      await processImage({ inst, year, rankingType });
       console.log(`    ✅ ${label}`);
       return { success: true, id: inst.institutionId };
     } catch (err) {
@@ -194,9 +220,9 @@ const processWithRetry = async ({ inst, year, rankingType, promptType, imageInde
 };
 
 // ── Process ONE (year, rankingType) category fully ───────────────────────────
-const processCategory = async (year, rankingType, promptType) => {
+const processCategory = async (year, rankingType) => {
   console.log(`\n${"─".repeat(65)}`);
-  console.log(`▶  ${year} / ${rankingType}  [${promptType}]`);
+  console.log(`▶  ${year} / ${rankingType}`);
   console.log(`${"─".repeat(65)}`);
 
   // Step 1: Fetch institute list + save metadata to DB
@@ -218,7 +244,6 @@ const processCategory = async (year, rankingType, promptType) => {
       inst:        institutes[i],
       year,
       rankingType,
-      promptType,
       imageIndex:  i,
       total:       institutes.length,
     });
@@ -274,16 +299,14 @@ async function run() {
       continue;
     }
 
-    const promptType = config.prompt;
-
     if (isDryRun) {
-      console.log(`🔍 WOULD RUN: ${year} / ${rankingType} [${promptType}]`);
+      console.log(`🔍 WOULD RUN: ${year} / ${rankingType}`);
       batchSummary.done.push({ label: `${year}/${rankingType}`, total: "?", succeeded: "?", failedCount: 0 });
       continue;
     }
 
     try {
-      const { total, succeeded, failed } = await processCategory(year, rankingType, promptType);
+      const { total, succeeded, failed } = await processCategory(year, rankingType);
 
       const label = `${year}/${rankingType}`;
       const allOk = failed.length === 0;

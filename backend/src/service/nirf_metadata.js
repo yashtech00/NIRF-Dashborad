@@ -142,7 +142,7 @@ export const getInstitutesAndSave = async (year, rankingType) => {
 export const scrapeAndDownloadImages = async (year, rankingType) => {
   try {
     // 0. Check if this combo has output images to process
-    const { hasOutput, prompt: promptType } = getPromptForRanking(year, rankingType);
+    const { hasOutput } = getPromptForRanking(year, rankingType);
     if (!hasOutput) {
       console.log(`⏭️  Skipping ${year}/${rankingType} — no output images available`);
       return {
@@ -154,7 +154,7 @@ export const scrapeAndDownloadImages = async (year, rankingType) => {
       };
     }
 
-    console.log(`🚀 Starting NIRF Job Enqueuing for ${year} ${rankingType} [${promptType}]`);
+    console.log(`🚀 Starting NIRF Job Enqueuing for ${year} ${rankingType}`);
 
     // 1. Fetch data
     const institutes = await getInstitutesData(year, rankingType);
@@ -169,7 +169,7 @@ export const scrapeAndDownloadImages = async (year, rankingType) => {
     // 3. Generate image links
     const imageLinks = generateImageLinks(institutes, year, rankingType);
 
-    // 4. Create jobs — embed promptType so each worker uses the correct prompt
+    // 4. Create jobs (unified prompt is used internally by AI extractor)
     const jobs = imageLinks.map((item, idx) => ({
       name: `process-${item.id}`,
       data: {
@@ -177,7 +177,6 @@ export const scrapeAndDownloadImages = async (year, rankingType) => {
         url: item.url,
         year,
         rankingType,
-        promptType,
       },
       opts: {
         delay: idx * 15000, // 15 sec stagger between jobs
@@ -187,12 +186,11 @@ export const scrapeAndDownloadImages = async (year, rankingType) => {
     // 5. Add to queue
     await nirfQueue.addBulk(jobs);
 
-    console.log(`📬 Enqueued ${jobs.length} jobs [${promptType}]`);
+    console.log(`📬 Enqueued ${jobs.length} jobs`);
 
     return {
       year,
       rankingType,
-      promptType,
       totalJobs: jobs.length,
       message: `${jobs.length} jobs added to queue`,
     };

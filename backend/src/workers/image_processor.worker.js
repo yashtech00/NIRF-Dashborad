@@ -35,6 +35,7 @@ const normalizeScore = (extracted = {}) => ({
     fqe: toNullableNumber(extracted?.tlr?.fqe),
     fru: toNullableNumber(extracted?.tlr?.fru),
     oe_mir: toNullableNumber(extracted?.tlr?.oe_mir),
+    oe: toNullableNumber(extracted?.tlr?.oe),
   },
   rp: {
     score: toNullableNumber(extracted?.rp?.score),
@@ -46,8 +47,13 @@ const normalizeScore = (extracted = {}) => ({
   },
   go: {
     score: toNullableNumber(extracted?.go?.score),
+    gph: toNullableNumber(extracted?.go?.gph),
     gue: toNullableNumber(extracted?.go?.gue),
+    ms: toNullableNumber(extracted?.go?.ms),
     gphd: toNullableNumber(extracted?.go?.gphd),
+    gpg: toNullableNumber(extracted?.go?.gpg),
+    gss: toNullableNumber(extracted?.go?.gss),
+    gphe: toNullableNumber(extracted?.go?.gphe),
   },
   oi: {
     score: toNullableNumber(extracted?.oi?.score),
@@ -55,10 +61,30 @@ const normalizeScore = (extracted = {}) => ({
     wd: toNullableNumber(extracted?.oi?.wd),
     escs: toNullableNumber(extracted?.oi?.escs),
     pcs: toNullableNumber(extracted?.oi?.pcs),
+    sctc: toNullableNumber(extracted?.oi?.sctc),
   },
   pr: {
     score: toNullableNumber(extracted?.pr?.score),
     pr_accr: toNullableNumber(extracted?.pr?.pr_accr),
+    premp: toNullableNumber(extracted?.pr?.premp),
+  },
+  qnr: {
+    score: toNullableNumber(extracted?.qnr?.score),
+    pu: toNullableNumber(extracted?.qnr?.pu),
+    ci: toNullableNumber(extracted?.qnr?.ci),
+    fppp: toNullableNumber(extracted?.qnr?.fppp),
+  },
+  qlr: {
+    score: toNullableNumber(extracted?.qlr?.score),
+    jcr: toNullableNumber(extracted?.qlr?.jcr),
+    top25: toNullableNumber(extracted?.qlr?.top25),
+    ipr: toNullableNumber(extracted?.qlr?.ipr),
+    h_index: toNullableNumber(extracted?.qlr?.h_index),
+  },
+  sfc: {
+    fqe: toNullableNumber(extracted?.sfc?.fqe),
+    ss: toNullableNumber(extracted?.sfc?.ss),
+    gphd: toNullableNumber(extracted?.sfc?.gphd),
   },
 });
 
@@ -72,9 +98,9 @@ let jobsProcessedInBatch = 0;
  *   Download → AI Extraction → DB Upsert → Cleanup
  */
 const processJob = async (job) => {
-  const { id, url, year, rankingType, promptType = "PROMPT_1" } = job.data;
+  const { id, url, year, rankingType } = job.data;
 
-  console.log(`\n⚙️  [Job ${job.id}] START — ${id} [${promptType}] (attempt ${job.attemptsMade + 1})`);
+  console.log(`\n⚙️  [Job ${job.id}] START — ${id} (attempt ${job.attemptsMade + 1})`);
 
   // ── Step 1: Download image ──────────────────────────────────────────────────
   const destDir = path.join(process.cwd(), "downloads", "graphs", year, rankingType);
@@ -92,8 +118,8 @@ const processJob = async (job) => {
     // ── Step 2: AI Extraction (Pro → Flash fallback) ────────────────────────
     let extracted;
     try {
-      extracted = await extractDataFromImage(imagePath, promptType);
-      console.log(`🤖 [Job ${job.id}] AI extraction done for: ${extracted?.institutionName || id} [${promptType}]`);
+      extracted = await extractDataFromImage(imagePath);
+      console.log(`🤖 [Job ${job.id}] AI extraction done for: ${extracted?.institutionName || id}`);
     } catch (aiErr) {
       // Propagate — BullMQ will retry with exponential backoff
       throw new Error(`AI extraction failed for ${id}: ${aiErr.message}`);

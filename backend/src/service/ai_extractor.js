@@ -59,230 +59,38 @@ const parseGeminiResponse = (text, imagePath) => {
   }
 };
 
-// ── PROMPTS ───────────────────────────────────────────────────────────────
-
-/** PROMPT_1: Standard 5-pillar scorecard (Overall, University, Engineering, Pharmacy, Research — 2024/2025) */
-const PROMPT_1 = `
+// ── UNIFIED PROMPT ────────────────────────────────────────────────────────
+// Single comprehensive prompt covering all NIRF ranking categories and formats
+// If a field is not visible in the image, set its value to 0
+const UNIFIED_PROMPT = `
 You are an expert at reading NIRF (National Institutional Ranking Framework) scorecard images.
 
-Carefully analyze the image and extract ALL visible data.
+Carefully analyze the image and extract ALL visible data. For any field NOT found in the image, use 0.
 
 ⚠️ CRITICAL INSTRUCTIONS:
-1. Extract ALL sub-scores (ss, fsr, fqe, fru, etc.) accurately.
-2. For each pillar (TLR, RP, GO, OI, PR):
+1. Extract ALL sub-scores accurately from the image.
+2. For MISSING fields (not visible in image) → use 0.
+3. For each pillar (TLR, RP, GO, OI, PR):
    - If the TOTAL score is clearly visible in the image → use it.
    - If NOT clearly visible → CALCULATE it as the SUM of its sub-components.
-3. NEVER leave pillar "score" as null if sub-scores are available.
+   - If ALL sub-components are 0 → pillar score is also 0.
 4. Ensure all numeric values are numbers (not strings).
 5. Double-check calculations before returning.
 
-📌 FORMULAS (IMPORTANT):
-- TLR.score = ss + fsr + fqe + fru + oe_mir 
-- RP.score  = pu + qp + ipr + fppp
-- GO.score  = gue + gphd
-- OI.score  = rd + wd + escs + pcs
-- PR.score  = pr_accr (usually same or directly visible)
-{
-  "institutionId": "string",
-  "institutionName": "string",
-  "city": "string",
-  "state": "string",
-  "over_all_rank": "string",
-  "totalScore": number,
-  "tlr": {
-    "score": number,
-    "ss": number,
-    "fsr": number,
-    "fqe": number,
-    "fru": number,
-    "oe_mir": number
-  },
-  "rp": {
-    "score": number,
-    "pu": number,
-    "qp": number,
-    "ipr": number,
-    "fppp": number,
-  },
-  "go": {
-    "score": number,
-    "gph":number,
-    "gue": number,
-    "ms":number
-    "gphd": number
-  },
-  "oi": {
-    "score": number,
-    "rd": number,
-    "wd": number,
-    "escs": number,
-    "pcs": number
-  },
-  "pr": {
-    "score": number,
-    "pr_accr": number
-  }
-}
-
-Return ONLY valid JSON. No explanation.
-`;
-
-/** PROMPT_2: Different layout used by Management, Medical, Dental, Architecture, College, 2021-2023 etc. */
-const PROMPT_2 = `
-You are an expert at reading NIRF (National Institutional Ranking Framework) scorecard images.
-
-Carefully analyze the image and extract ALL visible data.
-
-⚠️ CRITICAL INSTRUCTIONS:
-1. Extract ALL sub-scores (ss, fsr, fqe, fru, etc.) accurately.
-2. For each pillar (TLR, RP, GO, OI, PR):
-   - If the TOTAL score is clearly visible in the image → use it.
-   - If NOT clearly visible → CALCULATE it as the SUM of its sub-components.
-3. NEVER leave pillar "score" as null if sub-scores are available.
-4. Ensure all numeric values are numbers (not strings).
-5. Double-check calculations before returning.
-
-📌 FORMULAS (IMPORTANT):
-- TLR.score = ss + fsr + fqe + fru 
-- RP.score  = pu + qp + ipr + fppp
-- GO.score  = gue + gphd
-- OI.score  = rd + wd + escs + pcs
-- PR.score  = pr_accr (usually same or directly visible)
-
-{
-  "institutionId": "string",
-  "institutionName": "string",
-  "city": "string",
-  "state": "string",
-  "over_all_rank": "string",
-  "totalScore": number,
-  "tlr": {
-    "score": number,
-    "ss": number,
-    "fsr": number,
-    "fqe": number,
-    "fru": number,
-  },
-  "rp": {
-    "score": number,
-    "pu": number,
-    "qp": number,
-    "ipr": number,
-    "fppp": number,
-  },
-  "go": {
-    "score": number,
-    "gue": number,
-    "gphd": number
-  },
-  "oi": {
-    "score": number,
-    "rd": number,
-    "wd": number,
-    "escs": number,
-    "pcs": number
-  },
-  "pr": {
-    "score": number,
-    "pr_accr": number
-  }
-}
-
-Return ONLY valid JSON. No explanation.
-`;
-
-/** PROMPT_3: College 2019 special format */
-const PROMPT_3 = `
-You are an expert at reading NIRF (National Institutional Ranking Framework) scorecard images.
-
-Carefully analyze the image and extract ALL visible data.
-
-⚠️ CRITICAL INSTRUCTIONS:
-1. Extract ALL sub-scores (ss, fsr, fqe, fru, etc.) accurately.
-2. For each pillar (TLR, RP, GO, OI, PR):
-   - If the TOTAL score is clearly visible in the image → use it.
-   - If NOT clearly visible → CALCULATE it as the SUM of its sub-components.
-3. NEVER leave pillar "score" as null if sub-scores are available.
-4. Ensure all numeric values are numbers (not strings).
-5. Double-check calculations before returning.
-
-📌 FORMULAS (IMPORTANT):
-- TLR.score = ss + fsr + fqe + fru 
-- RP.score  = pu + qp 
-- GO.score  = gph + gue + ms
-- OI.score  = rd + wd + escs + pcs
-- PR.score  = pr_accr (usually same or directly visible)
-
-{
-  "institutionId": "string",
-  "institutionName": "string",
-  "city": "string",
-  "state": "string",
-  "over_all_rank": "string",
-  "totalScore": number,
-  "tlr": {
-    "score": number,
-    "ss": number,
-    "fsr": number,
-    "fqe": number,
-    "fru": number,
-  },
-  "rp": {
-    "score": number,
-    "pu": number,
-    "qp": number,
-  },
-  "go": {
-    "score": number,
-    "gph": number,
-    "gue": number,
-    "ms": number
-  },
-  "oi": {
-    "score": number,
-    "rd": number,
-    "wd": number,
-    "escs": number,
-    "pcs": number
-  },
-  "pr": {
-    "score": number,
-    "pr_accr": number
-  }
-}
-
-
-Return ONLY valid JSON. No explanation.
-`;
-
-/** PROMPT_4: Open University / Skill University / State Public University / SDG (newer categories 2024-2025) */
-const PROMPT_4 = `
-You are an expert at reading NIRF (National Institutional Ranking Framework) scorecard images.
-
-Carefully analyze the image and extract ALL visible data.
-
-⚠️ CRITICAL INSTRUCTIONS:
-1. Extract ALL sub-scores (ss, fsr, fqe, fru, etc.) accurately.
-2. For each pillar (TLR, RP, GO, OI, PR):
-   - If the TOTAL score is clearly visible in the image → use it.
-   - If NOT clearly visible → CALCULATE it as the SUM of its sub-components.
-3. NEVER leave pillar "score" as null if sub-scores are available.
-4. Ensure all numeric values are numbers (not strings).
-5. Double-check calculations before returning.
-
-📌 FORMULAS (IMPORTANT):
-- TLR.score = ss + fsr + fqe + fru + oe_mir 
+📌 IMPORTANT FORMULAS (include all available fields):
+- TLR.score = ss + fsr + fqe + fru + oe_mir + oe (include oe if visible)
 - RP.score  = pu + qp + ipr + fppp + sdg
-- GO.score  = gue + gphd
-- OI.score  = rd + wd + escs + pcs
-- PR.score  = pr_accr (usually same or directly visible)
+- GO.score  = gph + gue + ms + gphd + gpg + gss + gphe (sum only visible fields)
+- OI.score  = rd + wd + escs + pcs + sctc (include sctc if visible)
+- PR.score  = pr_accr + premp (include premp if visible)
 
+Return this JSON structure (use 0 for any missing values):
 {
   "institutionId": "string",
   "institutionName": "string",
   "city": "string",
   "state": "string",
-  "over_all_rank": "string",
+  "over_all_rank": "string or number",
   "totalScore": number,
   "tlr": {
     "score": number,
@@ -290,7 +98,8 @@ Carefully analyze the image and extract ALL visible data.
     "fsr": number,
     "fqe": number,
     "fru": number,
-    "oe_mir": number
+    "oe_mir": number,
+    "oe": number
   },
   "rp": {
     "score": number,
@@ -302,40 +111,62 @@ Carefully analyze the image and extract ALL visible data.
   },
   "go": {
     "score": number,
+    "gph": number,
     "gue": number,
-    "gphd": number
+    "ms": number,
+    "gphd": number,
+    "gpg": number,
+    "gss": number,
+    "gphe": number
   },
   "oi": {
     "score": number,
     "rd": number,
     "wd": number,
     "escs": number,
-    "pcs": number
+    "pcs": number,
+    "sctc": number,
   },
   "pr": {
     "score": number,
-    "pr_accr": number
-  }
-}
+    "pr_accr": number,
+    "premp": number,
+  },
+  qnr:{
+    "score": number
+    "pu": number,
+    "ci": number,
+    "fppp": number,
+  },
+  qlr:{
+    "score": number,
+    "jcr": number,
+    "top25": number,
+    "ipr": number,
+    "h_index": number,
 
+  },
+  sfc:{
+  "fqe":number,
+  "ss":number,
+  "gphd":number
+  }
+
+}
 
 Return ONLY valid JSON. No explanation.
 `;
 
-const PROMPTS = { PROMPT_1, PROMPT_2, PROMPT_3, PROMPT_4 };
-
 // ── CORE CALL ─────────────────────────────────────────────────────────────
-const callGemini = async (modelName, imagePath, promptType = "PROMPT_1") => {
-  console.log(`🔑 Using GEMINI_KEY | Model: ${modelName} | Prompt: ${promptType}`);
+const callGemini = async (modelName, imagePath) => {
+  console.log(`🔑 Using GEMINI_KEY | Model: ${modelName}`);
 
   const genAI = new GoogleGenerativeAI(GEMINI_KEY);
   const model = genAI.getGenerativeModel({ model: modelName });
 
-  const prompt = PROMPTS[promptType] || PROMPT_1;
-
   try {
     const result = await model.generateContent([
-      prompt,
+      UNIFIED_PROMPT,
       buildImagePart(imagePath),
     ]);
 
@@ -363,14 +194,14 @@ const callGemini = async (modelName, imagePath, promptType = "PROMPT_1") => {
 };
 
 // ── MAIN FUNCTION ─────────────────────────────────────────────────────────
-export const extractDataFromImage = async (imagePath, promptType = "PROMPT_1") => {
+export const extractDataFromImage = async (imagePath) => {
   let lastError = null;
 
-  // 🧠 PRO MODEL — 3 attempts, each rotates key on overload
+  // 🧠 PRO MODEL — 3 attempts
   for (let i = 0; i < 3; i++) {
     try {
-      console.log(`🧠 Pro attempt ${i + 1} [${promptType}]`);
-      return await callGemini(GEMINI_PRO_MODEL, imagePath, promptType);
+      console.log(`🧠 Pro attempt ${i + 1}`);
+      return await callGemini(GEMINI_PRO_MODEL, imagePath);
     } catch (err) {
       lastError = err;
       if (!isOverloadError(err)) throw err;
@@ -381,11 +212,11 @@ export const extractDataFromImage = async (imagePath, promptType = "PROMPT_1") =
   console.log("🛑 All Pro attempts exhausted, switching to Flash...");
   await sleep(5000); // brief pause before switching model tier
 
-  // ⚡ FLASH MODEL — 2 attempts, same key rotation
+  // ⚡ FLASH MODEL — 2 attempts
   for (let i = 0; i < 2; i++) {
     try {
-      console.log(`⚡ Flash attempt ${i + 1} [${promptType}]`);
-      return await callGemini(GEMINI_FLASH_MODEL, imagePath, promptType);
+      console.log(`⚡ Flash attempt ${i + 1}`);
+      return await callGemini(GEMINI_FLASH_MODEL, imagePath);
     } catch (err) {
       lastError = err;
       if (!isOverloadError(err)) throw err;
