@@ -68,24 +68,6 @@ const normalizeScore = (extracted = {}) => ({
     pr_accr: toNullableNumber(extracted?.pr?.pr_accr),
     premp: toNullableNumber(extracted?.pr?.premp),
   },
-  qnr: {
-    score: toNullableNumber(extracted?.qnr?.score),
-    pu: toNullableNumber(extracted?.qnr?.pu),
-    ci: toNullableNumber(extracted?.qnr?.ci),
-    fppp: toNullableNumber(extracted?.qnr?.fppp),
-  },
-  qlr: {
-    score: toNullableNumber(extracted?.qlr?.score),
-    jcr: toNullableNumber(extracted?.qlr?.jcr),
-    top25: toNullableNumber(extracted?.qlr?.top25),
-    ipr: toNullableNumber(extracted?.qlr?.ipr),
-    h_index: toNullableNumber(extracted?.qlr?.h_index),
-  },
-  sfc: {
-    fqe: toNullableNumber(extracted?.sfc?.fqe),
-    ss: toNullableNumber(extracted?.sfc?.ss),
-    gphd: toNullableNumber(extracted?.sfc?.gphd),
-  },
 });
 
 // ── Batch counter (module-level, shared across single worker instance) ────────

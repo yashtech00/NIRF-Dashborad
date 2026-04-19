@@ -45,18 +45,6 @@ const SCORE_COLUMNS = [
   { header: "SCTC Score", key: "score.oi.sctc" },
   { header: "PR Score", key: "score.pr.pr_accr" },
   { header: "PREMP Score", key: "score.pr.premp" },
-  { header: "QNR Score", key: "score.qnr.score" },
-  { header: "QNR PU", key: "score.qnr.pu" },
-  { header: "QNR CI", key: "score.qnr.ci" },
-  { header: "QNR FPPP", key: "score.qnr.fppp" },
-  { header: "QLR Score", key: "score.qlr.score" },
-  { header: "QLR JCR", key: "score.qlr.jcr" },
-  { header: "QLR Top25", key: "score.qlr.top25" },
-  { header: "QLR IPR", key: "score.qlr.ipr" },
-  { header: "QLR H_INDEX", key: "score.qlr.h_index" },
-  { header: "SFC FQE", key: "score.sfc.fqe" },
-  { header: "SFC SS", key: "score.sfc.ss" },
-  { header: "SFC GPHD", key: "score.sfc.gphd" },
 ];
 
 /**
@@ -144,11 +132,20 @@ export const generateExcelBuffer = async (filter = {}) => {
   });
   headerRow.height = 30;
 
+  // Build a Set of score column keys for quick lookup
+  const scoreColumnKeys = new Set(SCORE_COLUMNS.map((c) => c.key));
+
   // Add data rows
   formattedRecords.forEach((doc, idx) => {
     const rowData = {};
     finalColumns.forEach((col) => {
-      rowData[col.key] = getNestedValue(doc, col.key);
+      const val = getNestedValue(doc, col.key);
+      // For score columns, leave cell blank when the value is null or 0
+      if (scoreColumnKeys.has(col.key) && (val === null || val === undefined || val === 0 || val === "0" || val === "")) {
+        rowData[col.key] = "";
+      } else {
+        rowData[col.key] = val;
+      }
     });
 
     const row = sheet.addRow(rowData);

@@ -61,30 +61,30 @@ const parseGeminiResponse = (text, imagePath) => {
 
 // ── UNIFIED PROMPT ────────────────────────────────────────────────────────
 // Single comprehensive prompt covering all NIRF ranking categories and formats
-// If a field is not visible in the image, set its value to 0
+// If a field is not visible in the image, set its value to null
 const UNIFIED_PROMPT = `
 You are an expert at reading NIRF (National Institutional Ranking Framework) scorecard images.
 
-Carefully analyze the image and extract ALL visible data. For any field NOT found in the image, use 0.
+Carefully analyze the image and extract ALL visible data. For any field NOT found in the image, use null.
 
 ⚠️ CRITICAL INSTRUCTIONS:
 1. Extract ALL sub-scores accurately from the image.
-2. For MISSING fields (not visible in image) → use 0.
+2. For MISSING fields (not visible in image) → use null (not 0).
 3. For each pillar (TLR, RP, GO, OI, PR):
    - If the TOTAL score is clearly visible in the image → use it.
-   - If NOT clearly visible → CALCULATE it as the SUM of its sub-components.
-   - If ALL sub-components are 0 → pillar score is also 0.
-4. Ensure all numeric values are numbers (not strings).
+   - If NOT clearly visible → CALCULATE it as the SUM of its non-null sub-components.
+   - If ALL sub-components are null or missing → pillar score is also null.
+4. Ensure all numeric values are numbers (not strings). Use null (not 0) when a field is absent.
 5. Double-check calculations before returning.
 
 📌 IMPORTANT FORMULAS (include all available fields):
-- TLR.score = ss + fsr + fqe + fru + oe_mir + oe (include oe if visible)
-- RP.score  = pu + qp + ipr + fppp + sdg
+- TLR.score = ss + fsr + fqe + fru + oe_mir + oe (sum only the visible/non-null fields)
+- RP.score  = pu + qp + ipr + fppp + sdg (sum only the visible/non-null fields)
 - GO.score  = gph + gue + ms + gphd + gpg + gss + gphe (sum only visible fields)
 - OI.score  = rd + wd + escs + pcs + sctc (include sctc if visible)
 - PR.score  = pr_accr + premp (include premp if visible)
 
-Return this JSON structure (use 0 for any missing values):
+Return this JSON structure (use null for any missing/unavailable values — NEVER use 0 for a field that is not present in the image):
 {
   "institutionId": "string",
   "institutionName": "string",
@@ -131,27 +131,8 @@ Return this JSON structure (use 0 for any missing values):
     "score": number,
     "pr_accr": number,
     "premp": number,
-  },
-  qnr:{
-    "score": number
-    "pu": number,
-    "ci": number,
-    "fppp": number,
-  },
-  qlr:{
-    "score": number,
-    "jcr": number,
-    "top25": number,
-    "ipr": number,
-    "h_index": number,
 
-  },
-  sfc:{
-  "fqe":number,
-  "ss":number,
-  "gphd":number
   }
-
 }
 
 Return ONLY valid JSON. No explanation.
